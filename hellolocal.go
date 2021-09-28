@@ -16,15 +16,30 @@ type Info struct {
 	Visit uint
 }
 
-func main() {
+func data() int {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 	db.AutoMigrate(&Info{})
-	//   db.Create(&Info{visit_count: ++1})
+
+	db.Create(&Info{Visit: 1, ID: 1})
+	var i Info
+	row := db.Where("id = ?", 1).First(&i)
+
+	row.Updates(Info{Visit: i.Visit + 1})
+	dd := i.Visit
+
+	return int(dd)
+
+}
+
+func main() {
+
 	// Echo instance
 	e := echo.New()
+
+	fmt.Println(data())
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -32,46 +47,24 @@ func main() {
 
 	// Routes
 	e.GET("/hello", hello)
-
-	fmt.Println("inja")
-	// db.Create(&Info{Visit: 1})
-	// var info Info
-	// db.First(&info, 1)
-	row := db.Model(Info{}).Select("Visit").Where("id = ?", 1)
-	jow := db.First(row)
-	fmt.Println(jow)
-	for i := 0; i < 2; i++ {
-		fmt.Println(row)
-	}
-	// var num2 = db.First(&info)
-	// fmt.Println(num2.First())
-	//  visit_calculator := 4
-	// a := &Info{
-	// 	ID:    1,
-	// 	Visit: uint(func visit_calculator(i )
-	//
-	// db.Save(a)
-
-	// var num = db.First(info, 1)
-	// yam := &num
-	// fmt.Println(num)
-	// db.Model(&info).Updates(Info{Visit: uint(visit_calculator(1))})
-	// result := Info{}.visit_count
-	// fmt.Println(result)
-	// fmt.Println(Info{})
+	e.GET("/visit", visit)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9020"))
+
 }
 
 // Handle
 func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "hi")
+	return c.String(http.StatusOK, "hello world")
 
 }
 
-func visit_calculator(i int) int {
-	bebin := i + 1
-	return bebin
+func visit(c echo.Context) error {
+	dd := data()
+	// ds := string(dd)
+
+	return c.JSON(http.StatusOK, dd)
 
 }
+
