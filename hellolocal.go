@@ -16,12 +16,25 @@ type Info struct {
 }
 
 type Visitsay struct {
-	Count int
+	db *gorm.DB
 }
 
 func main() {
 
-	var i Info
+	// var i Info
+
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	db.AutoMigrate(&Info{})
+	db = db.FirstOrCreate(&Info{Visit: 1, ID: 1})
+
+	var v Visitsay
+	v = Visitsay{
+		db: db,
+	}
+
 	e := echo.New()
 
 	// Middleware
@@ -30,7 +43,7 @@ func main() {
 
 	// Routes
 	e.GET("/hello", hello)
-	e.GET("/visit", i.visitshow)
+	e.GET("/visit", v.visitshow)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9020"))
@@ -43,14 +56,9 @@ func hello(c echo.Context) error {
 
 }
 
-func (i Info) visitshow(c echo.Context) error {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-	db.AutoMigrate(&Info{})
-	db.FirstOrCreate(&Info{Visit: 1, ID: 1})
-
+func (v Visitsay) visitshow(c echo.Context) error {
+	var i Info
+	db := v.db
 	row := db.Where("id = ?", 1).First(&i)
 	row.Updates(Info{Visit: i.Visit + 1})
 
