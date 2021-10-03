@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -16,30 +15,14 @@ type Info struct {
 	Visit uint
 }
 
-func data() int {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-	db.AutoMigrate(&Info{})
-
-	db.Create(&Info{Visit: 1, ID: 1})
-	var i Info
-	row := db.Where("id = ?", 1).First(&i)
-
-	row.Updates(Info{Visit: i.Visit + 1})
-	dd := i.Visit
-
-	return int(dd)
-
+type Visitsay struct {
+	Count int
 }
 
 func main() {
 
-	// Echo instance
+	var i Info
 	e := echo.New()
-
-	fmt.Println(data())
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -47,7 +30,7 @@ func main() {
 
 	// Routes
 	e.GET("/hello", hello)
-	e.GET("/visit", visit)
+	e.GET("/visit", i.visitshow)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9020"))
@@ -60,11 +43,17 @@ func hello(c echo.Context) error {
 
 }
 
-func visit(c echo.Context) error {
-	dd := data()
-	// ds := string(dd)
+func (i Info) visitshow(c echo.Context) error {
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	db.AutoMigrate(&Info{})
+	db.FirstOrCreate(&Info{Visit: 1, ID: 1})
 
-	return c.JSON(http.StatusOK, dd)
+	row := db.Where("id = ?", 1).First(&i)
+	row.Updates(Info{Visit: i.Visit + 1})
+
+	return c.JSON(http.StatusOK, i.Visit)
 
 }
-
