@@ -7,6 +7,10 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"encoding/json"
+	"io/ioutil"
+	"log"
 )
 
 type Info struct {
@@ -17,6 +21,30 @@ type Info struct {
 
 type Visitsay struct {
 	db *gorm.DB
+}
+
+type Person struct {
+	Name string `json:"name"`
+}
+
+func hellosay(c echo.Context) error {
+	person := Person{}
+	defer c.Request().Body.Close()
+
+	b, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		log.Printf("failed reading the request body : %s", err)
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	err = json.Unmarshal(b, &person)
+	if err != nil {
+		log.Printf("failed unmarshaling ... : %s", err)
+		return c.String(http.StatusInternalServerError, "")
+	}
+
+	log.Printf("hello %#v ", person)
+	return c.String(http.StatusOK, "we got your name")
 }
 
 func main() {
@@ -44,6 +72,7 @@ func main() {
 	// Routes
 	e.GET("/hello", hello)
 	e.GET("/visit", v.visitshow)
+	e.POST("/hellosay", hellosay)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9020"))
